@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Set the background color of the splash screen. -->
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <!-- Use a transparent icon to "disable" the app icon. -->
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <!-- Set the theme of the Activity that directly follows the splash screen. -->
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.NoActionBar</item>
+    </style>
+</resources>

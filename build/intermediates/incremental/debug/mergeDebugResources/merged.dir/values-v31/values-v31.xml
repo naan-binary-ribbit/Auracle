@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        
+        <item name="windowSplashScreenBackground">@android:color/system_neutral1_10</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.NoActionBar</item>
+    </style>
+    <style name="Theme.SplashScreen" parent="Base.Theme.SplashScreen.DayNight">
+        <item name="android:windowSplashScreenAnimatedIcon">?windowSplashScreenAnimatedIcon</item>
+        <item name="android:windowSplashScreenBackground">?windowSplashScreenBackground</item>
+        <item name="android:windowSplashScreenAnimationDuration">
+            ?windowSplashScreenAnimationDuration
+        </item>
+    </style>
+    <style name="Theme.SplashScreen.IconBackground" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenIconBackgroundColor">
+            ?windowSplashScreenIconBackgroundColor
+        </item>
+    </style>
+</resources>

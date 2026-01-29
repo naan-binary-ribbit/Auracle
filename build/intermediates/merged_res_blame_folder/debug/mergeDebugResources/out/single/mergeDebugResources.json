@@ -1,0 +1,22 @@
+[
+    {
+        "merged": "com.auracle-debug-55:/drawable_setup_illustration.png.flat",
+        "source": "com.auracle-main-57:/drawable/setup_illustration.png"
+    },
+    {
+        "merged": "com.auracle-debug-55:/font_momo_signature.ttf.flat",
+        "source": "com.auracle-main-57:/font/momo_signature.ttf"
+    },
+    {
+        "merged": "com.auracle-debug-55:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.auracle-main-57:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.auracle-debug-55:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.auracle-main-57:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.auracle-debug-55:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.auracle-main-57:/drawable/ic_launcher_background.xml"
+    }
+]

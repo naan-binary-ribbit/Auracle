@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Dynamic Color Background for Android 12+ (Dark) -->
+        <item name="windowSplashScreenBackground">@android:color/system_neutral1_900</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault.NoActionBar</item>
+    </style>
+</resources>

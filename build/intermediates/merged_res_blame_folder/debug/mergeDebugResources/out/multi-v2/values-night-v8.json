@@ -1,0 +1,38 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.auracle-mergeDebugResources-53:/values-night-v8/values-night-v8.xml",
+            "map": [
+                {
+                    "source": "/home/moeedr/.gradle/caches/9.0-milestone-1/transforms/4a003a7790b05faaf56bb872820b0327/transformed/jetified-core-splashscreen-1.0.1/res/values-night-v8/values-night-v8.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "85",
+                        "endOffsets": "136"
+                    }
+                },
+                {
+                    "source": "/home/moeedr/auracle/src/main/res/values-night/themes.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "7",
+                        "endColumns": "12",
+                        "endOffsets": "427"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "141",
+                        "endLines": "8",
+                        "endColumns": "12",
+                        "endOffsets": "472"
+                    }
+                }
+            ]
+        }
+    ]
+}
