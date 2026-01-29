@@ -1,0 +1,47 @@
+# ===== OS / Editor junk =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.log
+
+# ===== IntelliJ / Android Studio =====
+.idea/
+*.iml
+
+# ===== Gradle =====
+.gradle/
+build/
+
+# ===== Local config =====
+local.properties
+
+# ===== Kotlin / Java =====
+*.class
+
+# ===== Android =====
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== APK / AAB =====
+*.apk
+*.aab
+
+# ===== Keystore stuff (DO NOT COMMIT, EVER) =====
+*.jks
+*.keystore
+
+# ===== NDK =====
+obj/
+
+# ===== Lint / Reports =====
+lint-results*.xml
+lint-results*.html
+lint.xml
+
+# ===== Debug artifacts =====
+*.hprof
+
+# ===== Temporary files =====
+tmp/
