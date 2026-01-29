@@ -26,18 +26,35 @@ import coil.compose.rememberAsyncImagePainter
 import com.auracle.data.Audiobook
 import com.auracle.data.AudiobookScanner
 import com.auracle.ui.theme.MomoSignature
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import com.auracle.ui.viewmodel.HomeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(folderUri: Uri) {
-    val context = LocalContext.current
-    val scanner = remember { AudiobookScanner(context) }
-    var audiobooks by remember { mutableStateOf<List<Audiobook>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+fun HomeScreen(folderUri: Uri, viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+    val audiobooks by viewModel.audiobooks.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    
+    val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(folderUri) {
-        audiobooks = scanner.scanFolder(folderUri)
-        isLoading = false
+        viewModel.loadAudiobooks(folderUri)
+    }
+
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) {
+            pullToRefreshState.endRefresh()
+        }
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.loadAudiobooks(folderUri, forceRefresh = true)
+        }
     }
 
     Scaffold(
@@ -109,77 +126,91 @@ fun HomeScreen(folderUri: Uri) {
         },
         modifier = Modifier.fillMaxSize()
     ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(pullToRefreshState.nestedScrollConnection)
+        ) {
+            if (isLoading && audiobooks.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = padding.calculateTopPadding(),
+                        bottom = padding.calculateBottomPadding() + 80.dp
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = "My Collection",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontSize = 32.sp
+                            )
+                            Text(
+                                text = "View All",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Column {
+                            Text(
+                                text = "LISTENING NOW",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.5.sp
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            ListeningNowCard(audiobooks.firstOrNull())
+                        }
+                    }
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(vertical = 20.dp)
+                        ) {
+                            item { FilterChip(selected = true, text = "All Books") }
+                            item { FilterChip(selected = false, text = "Currently Listening") }
+                            item { FilterChip(selected = false, text = "Finished") }
+                        }
+                    }
+
+                    items(audiobooks) { book ->
+                        AudiobookGridItem(book)
+                    }
+                }
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = padding.calculateTopPadding(),
-                    bottom = padding.calculateBottomPadding() + 80.dp
-                ),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "My Collection",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontSize = 32.sp
-                        )
-                        Text(
-                            text = "View All",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
 
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column {
-                        Text(
-                            text = "LISTENING NOW",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.5.sp
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        ListeningNowCard(audiobooks.firstOrNull())
-                    }
-                }
-
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    ) {
-                        item { FilterChip(selected = true, text = "All Books") }
-                        item { FilterChip(selected = false, text = "Currently Listening") }
-                        item { FilterChip(selected = false, text = "Finished") }
-                    }
-                }
-
-                items(audiobooks) { book ->
-                    AudiobookGridItem(book)
-                }
-            }
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
+
 
 @Composable
 fun ListeningNowCard(book: Audiobook?) {

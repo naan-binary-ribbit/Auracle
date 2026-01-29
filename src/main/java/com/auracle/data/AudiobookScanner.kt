@@ -4,47 +4,79 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.*
+import java.io.Serializable
 
 data class Audiobook(
     val id: String,
     val title: String,
     val author: String?,
     val coverArt: ByteArray?,
-    val folderUri: Uri
-)
+    val folderUri: String
+) : Serializable
 
 class AudiobookScanner(private val context: Context) {
 
-    fun scanFolder(folderUri: Uri): List<Audiobook> {
-        val rootDoc = DocumentFile.fromTreeUri(context, folderUri) ?: return emptyList()
-        val audiobooks = mutableListOf<Audiobook>()
+    suspend fun scanFolder(folderUri: Uri): List<Audiobook> = withContext(Dispatchers.IO) {
+        val rootDoc = DocumentFile.fromTreeUri(context, folderUri) ?: return@withContext emptyList()
+        val audiobookFolders = mutableListOf<DocumentFile>()
+        
+        // Step 1: Find all folders that contain audio files
+        findAudiobookFolders(rootDoc, audiobookFolders)
 
-        rootDoc.listFiles().forEach { subFolder ->
-            if (subFolder.isDirectory) {
-                val firstAudioFile = findFirstAudioFile(subFolder)
-                if (firstAudioFile != null) {
-                    val metadata = getMetadata(firstAudioFile.uri)
-                    audiobooks.add(
-                        Audiobook(
-                            id = subFolder.name ?: "",
-                            title = metadata.title ?: subFolder.name ?: "Unknown Title",
-                            author = metadata.author,
-                            coverArt = metadata.coverArt,
-                            folderUri = subFolder.uri
-                        )
-                    )
+        // Step 2: Extract metadata in parallel
+        audiobookFolders.map { folder ->
+            async {
+                val firstAudioFile = findFirstAudioFile(folder)
+                val metadata = if (firstAudioFile != null) {
+                    getMetadata(firstAudioFile.uri)
+                } else {
+                    BasicMetadata(null, null, null)
                 }
+                
+                Audiobook(
+                    id = folder.uri.toString(),
+                    title = metadata.title ?: folder.name ?: "Unknown Title",
+                    author = metadata.author,
+                    coverArt = metadata.coverArt,
+                    folderUri = folder.uri.toString()
+                )
+            }
+        }.awaitAll()
+    }
+
+    private fun findAudiobookFolders(folder: DocumentFile, result: MutableList<DocumentFile>) {
+        if (containsAudioFiles(folder)) {
+            result.add(folder)
+        }
+        
+        // Even if the current folder has audio files, it might have subfolders with OTHER audiobooks
+        // So we scan subfolders regardless.
+        folder.listFiles().forEach { subFile ->
+            if (subFile.isDirectory) {
+                findAudiobookFolders(subFile, result)
             }
         }
-        return audiobooks
+    }
+
+    private fun containsAudioFiles(folder: DocumentFile): Boolean {
+        return folder.listFiles().any { isAudioFile(it) }
+    }
+
+    private fun isAudioFile(file: DocumentFile): Boolean {
+        val name = file.name?.lowercase() ?: ""
+        val type = file.type?.lowercase() ?: ""
+        return type.startsWith("audio/") || 
+               name.endsWith(".mp3") || 
+               name.endsWith(".m4a") || 
+               name.endsWith(".m4b") ||
+               name.endsWith(".aac") ||
+               name.endsWith(".wav") ||
+               name.endsWith(".flac")
     }
 
     private fun findFirstAudioFile(folder: DocumentFile): DocumentFile? {
-        return folder.listFiles().find { file ->
-            val type = file.type ?: ""
-            type.startsWith("audio/") || file.name?.endsWith(".mp3") == true || 
-            file.name?.endsWith(".m4a") == true || file.name?.endsWith(".m4b") == true
-        }
+        return folder.listFiles().find { isAudioFile(it) }
     }
 
     private data class BasicMetadata(val title: String?, val author: String?, val coverArt: ByteArray?)
@@ -56,7 +88,8 @@ class AudiobookScanner(private val context: Context) {
                 retriever.setDataSource(pfd.fileDescriptor)
                 val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
                 val author = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) ?:
-                             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
+                             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) ?:
+                             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_AUTHOR)
                 val coverArt = retriever.embeddedPicture
                 BasicMetadata(title, author, coverArt)
             } ?: BasicMetadata(null, null, null)
@@ -67,3 +100,4 @@ class AudiobookScanner(private val context: Context) {
         }
     }
 }
+
