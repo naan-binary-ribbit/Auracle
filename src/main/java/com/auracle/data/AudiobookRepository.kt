@@ -20,8 +20,14 @@ class AudiobookRepository(private val context: Context) {
         // 2. Scan for new files
         try {
             val fresh = scanner.scanFolder(folderUri)
-            saveToCache(fresh)
-            emit(fresh)
+            val updatedFresh = if (cached != null) {
+                val cachedIds = cached.map { it.id }.toSet()
+                fresh.map { it.copy(isNew = it.id !in cachedIds) }
+            } else {
+                fresh // First scan, maybe don't mark all as new or mark all as new? User says "newly added by refresh"
+            }
+            saveToCache(updatedFresh)
+            emit(updatedFresh)
         } catch (e: Exception) {
             // If scanning fails, we already emitted cached. Just stop.
         }

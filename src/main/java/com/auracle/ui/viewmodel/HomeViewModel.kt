@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.auracle.data.Audiobook
 import com.auracle.data.AudiobookRepository
+import com.auracle.data.PreferenceManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +14,9 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AudiobookRepository(application)
+    private val preferenceManager = PreferenceManager(application)
+    
+    fun getBookProgress(id: String) = preferenceManager.getBookProgress(id)
     
     private val _audiobooks = MutableStateFlow<List<Audiobook>>(emptyList())
     val audiobooks: StateFlow<List<Audiobook>> = _audiobooks.asStateFlow()

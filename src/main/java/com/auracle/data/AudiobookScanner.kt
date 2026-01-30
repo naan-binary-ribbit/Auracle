@@ -12,7 +12,23 @@ data class Audiobook(
     val title: String,
     val author: String?,
     val coverArt: ByteArray?,
-    val folderUri: String
+    val folderUri: String,
+    val audioFiles: List<AudioFile> = emptyList(),
+    val duration: Long = 0L,
+    val isNew: Boolean = false
+) : Serializable
+
+data class AudioFile(
+    val name: String,
+    val uri: String,
+    val duration: Long
+) : Serializable
+
+data class Chapter(
+    val title: String,
+    val startPosition: Long,
+    val endPosition: Long,
+    val fileUri: String // The file this chapter belongs to
 ) : Serializable
 
 class AudiobookScanner(private val context: Context) {
@@ -27,9 +43,17 @@ class AudiobookScanner(private val context: Context) {
         // Step 2: Extract metadata in parallel
         audiobookFolders.map { folder ->
             async {
-                val firstAudioFile = findFirstAudioFile(folder)
+                val files = folder.listFiles()
+                    .filter { isAudioFile(it) }
+                    .sortedBy { it.name }
+                    .map { file ->
+                        val duration = getFileDuration(file.uri)
+                        AudioFile(file.name ?: "Unknown", file.uri.toString(), duration)
+                    }
+
+                val firstAudioFile = files.firstOrNull()
                 val metadata = if (firstAudioFile != null) {
-                    getMetadata(firstAudioFile.uri)
+                    getMetadata(Uri.parse(firstAudioFile.uri))
                 } else {
                     BasicMetadata(null, null, null)
                 }
@@ -39,10 +63,26 @@ class AudiobookScanner(private val context: Context) {
                     title = metadata.title ?: folder.name ?: "Unknown Title",
                     author = metadata.author,
                     coverArt = metadata.coverArt,
-                    folderUri = folder.uri.toString()
+                    folderUri = folder.uri.toString(),
+                    audioFiles = files,
+                    duration = files.sumOf { it.duration }
                 )
             }
         }.awaitAll()
+    }
+
+    private fun getFileDuration(uri: Uri): Long {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                retriever.setDataSource(pfd.fileDescriptor)
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
+            } ?: 0L
+        } catch (e: Exception) {
+            0L
+        } finally {
+            retriever.release()
+        }
     }
 
     private fun findAudiobookFolders(folder: DocumentFile, result: MutableList<DocumentFile>) {
